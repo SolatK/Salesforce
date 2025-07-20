@@ -1,6 +1,6 @@
 package entity;
 
-public enum PicklistType {
+public enum InputType {
     ModalContact,
     Account
 }
