@@ -1,46 +1,41 @@
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
+package tests;
+
+import entity.AccountRating;
+import org.testng.Assert;
 import org.testng.annotations.Test;
+import pages.AccountPage;
+import pages.LoginPage;
+import pages.NewAccountPage;
 
-import java.time.Duration;
-import java.util.HashMap;
+import java.time.LocalDateTime;
 
-import static java.lang.Thread.sleep;
-
-public class AccountTest {
+public class AccountTest extends BaseTest {
 
     @Test
-    public void checkCreateAccount() throws InterruptedException {
-        WebDriver driver = getDriver();
+    public void createAccountTest() {
 
-        driver.manage().window().maximize();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        LoginPage login = new LoginPage(driver);
+        login.open();
+        login.login();
 
-        driver.get("https://tms9-dev-ed.develop.my.salesforce.com/");
-        driver.findElement(By.id("username")).sendKeys("tborodich@tms.sandbox");
-        driver.findElement(By.id("password")).sendKeys("Password003!");
-        driver.findElement(By.id("Login")).click();
 
-        //todo заменить нормальным ожиданием
-        sleep(5000);
-        driver.get("https://tms9-dev-ed.develop.lightning.force.com/lightning/o/Account/new");
+        NewAccountPage newAccount = new NewAccountPage(driver);
+        newAccount.open();
+        String name = String.format("Тестов Тестович %tT", LocalDateTime.now());
+        String phone = String.format("89%09d", (int) (999999999 * Math.random()));
+        boolean isVip = Math.random() > 0.5;
+        String description = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed fringilla dui sed scelerisque venenatis. Donec mollis mauris ac dictum gravida. Maecenas feugiat vitae massa a condimentum. Integer tincidunt quam a rhoncus varius.";
+        AccountRating rating = AccountRating.HOT;
+        newAccount.waitPageLoad();
+        newAccount.createAccount(name, phone, rating, isVip, description);
 
-        driver.findElement(By.xpath("//input[@name=\"Name\"]")).sendKeys("test");
-    }
+        AccountPage accountPage = new AccountPage(driver);
+        accountPage.closeToast();
+        accountPage.getToDetails();
 
-    private static WebDriver getDriver() {
-        ChromeOptions options = new ChromeOptions();
-        HashMap<String, Object> chromePrefs = new HashMap<>();
-        chromePrefs.put("credentials_enable_service", false);
-        chromePrefs.put("profile.password_manager_enabled", false);
-        options.setExperimentalOption("prefs", chromePrefs);
-        options.addArguments("--incognito");
-        options.addArguments("--disable-notifications");
-        options.addArguments("--disable-popup-blocking");
-        options.addArguments("--disable-infobars");
-
-        return new ChromeDriver(options);
+        Assert.assertEquals(accountPage.getDetail("Account Name"), name);
+        Assert.assertEquals(accountPage.getPhone(), phone);
+        Assert.assertEquals(accountPage.getDetail("Description"), description);
+        accountPage.getCheckbox("VIP Client");
     }
 }
